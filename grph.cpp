@@ -909,7 +909,6 @@ vector<vector<int>> boruvka_alg()
         }
         
         bool added = false;
-        
         for(int i = 0; i < n; i++)
         {
             if(from[i] != -1)
@@ -918,8 +917,7 @@ vector<vector<int>> boruvka_alg()
                 int v = to[i];
                 
                 if(comp[u] != comp[v])
-                {
-                    T[u][v] = matrix[u][v];
+                {   T[u][v] = matrix[u][v];
                     T[v][u] = matrix[v][u];
                     int old = comp[v];
                     int new_c = comp[u];
@@ -936,7 +934,7 @@ vector<vector<int>> boruvka_alg()
         
         if(!added && edges_in_T < n - 1)
         {
-            cout << "Граф несвязный\n";
+            cout << "Граф несвязный:((\n";
             return vector<vector<int>>(n, vector<int>(n, 0));
         }
     }
@@ -1150,10 +1148,10 @@ void l3_3(int s, int is, vector<vector<int>> ca, vector<vector<int>> co, int tf)
      
 
 
-        cout<<"\nFIRST!!\n";
+        /*cout<<"\nFIRST!!\n";
         print_matrix(ca);
         cout<<endl;
-        print_matrix(b_co);
+        print_matrix(b_co);*/
         
          cout<<is;
     for(int i:path) cout<<"->"<<i;
@@ -1185,11 +1183,11 @@ void l3_3(int s, int is, vector<vector<int>> ca, vector<vector<int>> co, int tf)
             if(b_co[path[i+1]-1][path[i]-1]!= 10000) b_co[path[i+1]-1][path[i]-1] = -b_co[path[i]-1][path[i+1]-1];
         }
 
-        cout<<"THIRD!!\n";
+        /*cout<<"THIRD!!\n";
         print_matrix(ca);
         cout<<endl;
         print_matrix(b_co);
-        ic+=1;
+        ic+=1;*/
         //if(ic ==5) break;
     }
     for(int i:path) cout<<i<<"->";
@@ -1302,7 +1300,22 @@ vector<vector<int>> FF_alg(int s, int t, vector<vector<int>> c, int n)
     return F;
 }
 
+/*void max_r (vector<vector<int>> c)
+{
 
+    vector<int> path;
+    vector<int> wait;
+    int p = c.size();
+    vector<vector<int>> visited(p, vector<int>(p, 0));
+    int it_count=0;
+
+    for(int i =0; i<p; i++)
+    {
+        DFS_edge(i, visited, path, it_count);
+        
+    }
+
+}*/
 
 
 
@@ -1330,7 +1343,7 @@ int main()
     vector<vector<int>> cost;
     vector<vector<int>> capacity;
     vector<vector<int>> big_capacity;
-    int targetFlow;
+    int targetFlow=-100;
 
     int m_stock;
     int m_istock;
@@ -1353,10 +1366,13 @@ int main()
         cout << "11. Обновление матрицы\n";
         cout << "12. Поиск максимального потока\n";
         cout << "13. Поиск самого дешевого маршрута\n";
-        cout << "14. Выход\n";
+        cout << "=================================4  Лаба=========================================\n";
+        cout << "14  Теорема Кхиргофа\n";
+        cout << "15. Минимальный по весу остов + код Прюфера\n";
+        cout << "16. Выход\n";
         cout << "Выбор: ";
 
-        int choice = input_check(1, 15); 
+        int choice = input_check(1, 16); 
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
@@ -1791,6 +1807,11 @@ int main()
             }
             case 13:
             {
+                if(targetFlow==-100)
+                {
+                    cout<<"Сначала выполните п.12\n";
+
+                }
                 cout << "Целевой поток (2/3): " << targetFlow << endl;
                 l3_3(m_stock,m_istock, big_capacity, cost, targetFlow);
                 break;
@@ -1799,6 +1820,15 @@ int main()
 
             case 14:
             {
+                if (!graph_created1) {
+                    cout << "Сначала создайте граф\n";
+                    break;
+                }
+                if(is_oriented)
+                {
+                    cout<<"Граф должен быть не ориентированным\n";
+                    break;
+                }
                 vector<vector<int>> krg =work->make_krg_matrix();
                 print_matrix(krg);
                 int r = work->krg_teorem(krg);
@@ -1810,6 +1840,11 @@ int main()
             {
                 if (!graph_created1) {
                     cout << "Сначала создайте граф\n";
+                    break;
+                }
+                if(is_oriented)
+                {
+                    cout<<"Граф должен быть не ориентированным\n";
                     break;
                 }
                 vector<vector<int>> T = work->boruvka_alg();
@@ -1834,6 +1869,8 @@ int main()
                 
                 break;
             }
+            case 16:
+            return 0;
         }
     }
     return 0;
