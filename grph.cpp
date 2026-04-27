@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <stack>
 #include <algorithm>
 #include <ctime>
 #include <cmath>
@@ -293,8 +294,9 @@ class Graph
 
     vector<vector<int>> matrix;
     vector<vector<int>> ed;
+    vector<int> degrees;
 
-    bool orien =0;
+    bool orien;
 
     int n ;
 
@@ -350,8 +352,9 @@ class Graph
         m=n/2;
         o=n/3;
         v.clear();
+        degrees.clear();
          
-        vector<int> degrees = make_random(n,o,m);
+        degrees = make_random(n,o,m);
         while(!check_two(degrees)) {degrees= make_random(n,o,m);}
         for (int d : degrees) cout << d << " ";
         cout << endl;
@@ -362,48 +365,27 @@ class Graph
             //cin>> d;
             add_node(i,degrees[i]);
         }
+        ed=matrix;
 
         //cout<<"done\n";
     }
 
     bool make_matrix()
     {
-        matrix.resize(n, vector<int>(n, 0));
-        vector<node> v_help = sorter_node(v);
-        vector<node>  temp ;
-        int save;
+        do{
+            make_nodes_ori();
+            make_matrix_ori();
+        }while(!check_matrix_fw());  
         for (int i = 0; i < n; i++) 
         {
-            if (v_help[i].degree == 0) continue;
-            
-            int deg = v_help[i].degree;
-            
-            int dop=2;
-            //if(i>1) dop = temp[i].degree;
-
-            for (int j = i+1; j < n && deg > 0; j++) {
-                if (v_help[j].degree > 0) {
-                    bool been =0;
-                    for(int k =0; k < temp.size();k++)
-                    {
-                        if(v_help[j].id == temp[k].id) been =1;
-                    }
-                    if(been) continue;
-                    int u = v_help[i].id;
-                    int v = v_help[j].id;
-                    matrix[u][v] = 1;
-                    matrix[v][u] = 1;
-                    
-                    v_help[i].degree--;
-                    v_help[j].degree--;
-                    deg--;
-                    dop=j;
-                    temp.push_back(v_help[j]);
-                }
+            for (int j = 0; j < n; j++) 
+            {
+                if(matrix[i][j]!=0) matrix[j][i]= matrix[i][j];
             }
         }
         ed=matrix;
-        //print_matrix(matrix);
+        orien = 0;
+        //print_matrix(ed);
         return 1;
     }
 
@@ -423,7 +405,7 @@ class Graph
 
     bool make_matrix_ori()
     {
-        orien = 1;
+        
         matrix.resize(n, vector<int>(n, 0));
         for(int i =0;i<n;i++)
         {
@@ -450,6 +432,7 @@ class Graph
         }
         //print_matrix(matrix);
         ed=matrix;
+        orien = 1;
         return 1;
     }
 
@@ -509,7 +492,6 @@ class Graph
             }
             if(has_p==0)return 0;
         }
-
         return 1;
 
     }
@@ -716,13 +698,13 @@ void update_matrix(int mode,vector<vector<int>>& m)
     
     for(int i =0;i<n;i++)
     {
-        if(orien == 0) f = i;
+        if(!orien) f = i;
         for(int j =f;j<n;j++)
         {
             if(m[i][j]==1) 
             {
                 m[i][j] = w[count];
-                if(orien == 0)m[j][i] = w[count];
+                if(!orien)m[j][i] = m[i][j];
                 count++;
             }
         }
@@ -746,13 +728,18 @@ void update_matrix(int mode)
     
     for(int i =0;i<n;i++)
     {
-        if(orien == 0) f = i;
-        for(int j =f;j<n;j++)
+        if(!orien) f = i;
+        for(int j =0;j<n;j++)
         {
-            if(matrix[i][j]==1) 
+            if(matrix[i][j]!=0) 
             {
+                
                 matrix[i][j] = w[count];
-                if(orien == 0)matrix[j][i] = w[count];
+                if(!orien)
+                {
+                    cout<<"here\n";
+                    matrix[j][i] = matrix[i][j] ;
+                }
                 count++;
             }
         }
@@ -815,9 +802,250 @@ int floid_w_alg(vector<vector<int>>& lenght, vector<vector<int>>& paths)
 
 }   
 
+vector<vector<int>> make_krg_matrix()
+{
+    vector<vector<int>> krg(n, vector<int>(n, 0));
+    for(int i =0;i<n;i++)
+    {
+        for (int j =0; j<n;j++)
+        {
+            if(i==j) 
+            {
+                krg[i][j]=degrees[i];
+                continue;
+            }
+            krg[i][j] = ed[i][j] * (-1);
+        }
+    }
+
+    return krg;
+
+}
+
+int krg_teorem(vector<vector<int>>& krg)
+{
+    vector<vector<int>> n_krg(n-1, vector<int>(n-1, 0));
+    for(int i =0;i<n-1;i++)
+    {
+        for (int j =0; j<n-1;j++)
+        {
+           n_krg[i][j] = krg [i+1][j+1];
+        }
+    }
+
+    return det(n_krg);
+
+}
+
+int det(vector<vector<int>> krg) {
+
+    int n = krg.size();
+    if(n == 1) return krg[0][0];
+    if(n == 2) return krg[0][0] * krg[1][1] - krg[0][1] * krg[1][0];
+    
+    int det1 = 0;
+    for(int j = 0; j < n; j++) 
+    {
+        vector<vector<int>> krg_2(n-1, vector<int>(n-1));
+        for(int i = 1; i < n; i++) 
+        {
+            for(int k = 0, col = 0; k < n; k++) {
+                if(k == j) continue;
+                krg_2[i-1][col++] = krg[i][k];
+            }
+        }
+        det1 += (j % 2 == 0 ? 1 : -1) * krg[0][j] * det(krg_2);
+    }
+    return det1;
+}
 
 
+vector<vector<int>> boruvka_alg()
+{
+    if(orien)
+    {
+        cout << "Алгоритм Борувки работает только для неориентированных графов\n";
+        return vector<vector<int>>(n, vector<int>(n, 0));
+    }
+    
+    vector<vector<int>> T(n, vector<int>(n, 0));
+    
+    vector<int> comp(n);
+    for(int i = 0; i < n; i++) comp[i] = i;
+    
+    int edges_in_T = 0;
+    
+    while(edges_in_T < n - 1)
+    {
+        vector<int> min_weight(n, 1000000);
+        vector<int> from(n, -1);
+        vector<int> to(n, -1);
+        
+        for(int i = 0; i < n; i++)
+        {
+            for(int j = i + 1; j < n; j++)
+            {
+                int w = matrix[i][j];
+                if(w != 0 && comp[i] != comp[j])
+                {
+                    int c1 = comp[i];
+                    int c2 = comp[j];
+                    
+                    if(w < min_weight[c1])
+                    {
+                        min_weight[c1] = w;
+                        from[c1] = i;
+                        to[c1] = j;
+                    }
+                    
+                    if(w < min_weight[c2])
+                    {
+                        min_weight[c2] = w;
+                        from[c2] = j;
+                        to[c2] = i;
+                    }
+                }
+            }
+        }
+        
+        bool added = false;
+        
+        for(int i = 0; i < n; i++)
+        {
+            if(from[i] != -1)
+            {
+                int u = from[i];
+                int v = to[i];
+                
+                if(comp[u] != comp[v])
+                {
+                    T[u][v] = matrix[u][v];
+                    T[v][u] = matrix[v][u];
+                    int old = comp[v];
+                    int new_c = comp[u];
+                    for(int k = 0; k < n; k++)
+                    {
+                        if(comp[k] == old) comp[k] = new_c;
+                    }
+                    
+                    edges_in_T++;
+                    added = true;
+                }
+            }
+        }
+        
+        if(!added && edges_in_T < n - 1)
+        {
+            cout << "Граф несвязный\n";
+            return vector<vector<int>>(n, vector<int>(n, 0));
+        }
+    }
+    
+    return T;
+}
 
+vector<pair<int,int>> make_code(vector<vector<int>> tree)
+{
+    int p = tree.size();
+    vector<pair<int,int>> A(p - 1);
+    
+    vector<int> degree(p, 0);
+    for(int i = 0; i < p; i++)
+    {
+        for(int j = 0; j < p; j++)
+        {
+            if(tree[i][j] != 0) degree[i]++;
+        }
+    }
+    
+    for(int i = 0; i < p - 1; i++)
+    {
+        int v = -1;
+        for(int k = 0; k < p; k++)
+        {
+            if(degree[k] == 1)
+            {
+                v = k;
+                break;
+            }
+        }
+        
+        int neighbor = -1;
+        int wei =10000;
+        for(int j = 0; j < p; j++)
+        {
+            if(tree[v][j] != 0)
+            {
+                neighbor = j;
+                wei = tree[v][j];
+                break;
+            }
+        }
+        
+        A[i] = pair<int,int>(neighbor+1,wei);
+        
+        tree[v][neighbor] = 0;
+        tree[neighbor][v] = 0;
+        degree[v]--;
+        degree[neighbor]--;
+    }
+    
+    return A;
+}
+
+vector<vector<int>> from_code(vector<pair<int,int>>& A)
+{
+    int p = A.size() + 1;
+    vector<vector<int>> tree(p, vector<int>(p, 0));
+    
+    vector<bool> used(p, false);
+    
+    for(int i = 0; i < p - 1; i++)
+    {
+        int v = -1;
+        for(int k = 0; k < p; k++)
+        {
+            if(used[k]) continue;
+            
+            bool not_in_rest = true;
+            for(int j = i; j < p - 1; j++)
+            {
+                if(A[j].first-1 == k)
+                {
+                    not_in_rest = false;
+                    break;
+                }
+            }
+            
+            if(not_in_rest)
+            {
+                v = k;
+                break;
+            }
+        }
+        
+        tree[v][A[i].first-1] = A[i].second;
+        tree[A[i].first-1][v] = A[i].second;
+        used[v] = true;
+    }
+    
+    int last_u = -1, last_v = -1;
+    for(int k = 0; k < p; k++)
+    {
+        if(!used[k])
+        {
+            if(last_u == -1) last_u = k;
+            else last_v = k;
+        }
+    }
+    if(last_u != -1 && last_v != -1)
+    {
+        tree[last_u][last_v] = 1;
+        tree[last_v][last_u] = 1;
+    }
+    
+    return tree;
+}
 
 };
 
@@ -1081,6 +1309,7 @@ vector<vector<int>> FF_alg(int s, int t, vector<vector<int>> c, int n)
 
 
 
+
   
 
 int main()
@@ -1127,7 +1356,7 @@ int main()
         cout << "14. Выход\n";
         cout << "Выбор: ";
 
-        int choice = input_check(1, 14); 
+        int choice = input_check(1, 15); 
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
@@ -1411,6 +1640,8 @@ int main()
                 for(int i:path) cout<<"->"<<i;
                 cout<<endl;
 
+                cout<<"Длина пути: "<<lenght[u-1][v-1]<<endl;
+
                 break;
             }
             case 10:
@@ -1567,8 +1798,42 @@ int main()
             }
 
             case 14:
-                cout << "Выход.\n";
-                return 0;
+            {
+                vector<vector<int>> krg =work->make_krg_matrix();
+                print_matrix(krg);
+                int r = work->krg_teorem(krg);
+
+                cout<<r<<endl;
+                break;
+            }
+            case 15: 
+            {
+                if (!graph_created1) {
+                    cout << "Сначала создайте граф\n";
+                    break;
+                }
+                vector<vector<int>> T = work->boruvka_alg();
+                if(T != vector<vector<int>>(T.size(), vector<int>(T.size(), 0)))
+                {cout << "\nМинимальное остовное дерево:\n";
+                print_matrix(T);}
+                else cout<<"Ошибка!\n";
+
+                vector<pair<int,int>> code= work->make_code(T);
+    
+                cout << "\nПолученный код:\n";
+                for(int i = 0; i < code.size(); i++)
+                {
+                    cout << code[i].first<<"-"<< code[i].second<< " ";
+                }
+                cout << endl;
+                
+                vector<vector<int>> r_tree = work->from_code(code);
+               
+                cout << "\nВосстановленная матрица смежности:\n";
+                 print_matrix(r_tree);
+                
+                break;
+            }
         }
     }
     return 0;
